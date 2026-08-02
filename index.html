@@ -442,7 +442,25 @@ document.getElementById('c_date').valueAsDate=new Date();
 var ITEM_INDEX = {};
 var currentEditCode = null;
 
+function applyCustomDetails(){
+  try {
+    var stored = localStorage.getItem(DETAILS_KEY);
+    if(stored) customDetails = Object.assign(customDetails, JSON.parse(stored));
+  } catch(e){}
+
+  CATS.forEach(function(c){
+    c.items.forEach(function(it){
+      if(customDetails[it.code]){
+        if(customDetails[it.code].refPrice !== undefined) it.refPrice = customDetails[it.code].refPrice;
+        if(customDetails[it.code].desc !== undefined)     it.desc     = customDetails[it.code].desc;
+        if(customDetails[it.code].notes !== undefined)    it.notes    = customDetails[it.code].notes;
+      }
+    });
+  });
+}
+
 function buildItemIndex(){
+  applyCustomDetails();
   ITEM_INDEX = {};
   CATS.forEach(function(c){
     c.items.forEach(function(it){
@@ -523,19 +541,26 @@ document.getElementById('infoSaveEditBtn').addEventListener('click', async funct
     });
   });
 
-  // حفظ التعديلات في التخزين المحلي (localStorage)
+  // 1. حفظ التعديلات في التخزين المحلي (localStorage)
   try {
     customDetails[currentEditCode] = { refPrice: newPrice, desc: newDesc, notes: newNotes };
     localStorage.setItem(DETAILS_KEY, JSON.stringify(customDetails));
   } catch(e){}
 
+  // 2. حفظ التعديلات سحابياً إذا كان متصلاً بالإنترنت
+  if(typeof isCloudActive !== 'undefined' && isCloudActive && db){
+    try {
+      await db.collection("item_details").doc(currentEditCode).set({
+        refPrice: newPrice,
+        desc: newDesc,
+        notes: newNotes
+      });
+    } catch(e){}
+  }
+
   buildItemIndex();
   showInfo(currentEditCode);
-
-  // خير المستخدم بحفظ التعديل نهائياً في ملف HTML على جهازه
-  if(confirm('✅ تم حفظ التعديل في الذاكرة!\n\nهل تريد حفظ التعديل في ملف الـ HTML على جهازك فوراً لضمان عدم ضياعه عند إغلاق المتصفح؟')){
-    await saveHTMLFile();
-  }
+  alert('✅ تم حفظ تعديلات العنصر بنجاح!');
 });
 
 // إغلاق مودال المعلومات
@@ -641,12 +666,26 @@ function initCloud(){
       db = firebase.firestore();
       isCloudActive = true;
       updateCloudBadge(true, "متصل بالسحابة أونلاين ☁️");
+      syncItemDetailsFromCloud();
     } else {
       updateCloudBadge(false, "وضع محلي (Offline)");
     }
   } catch(e) {
     updateCloudBadge(false, "وضع محلي (Offline)");
   }
+}
+
+async function syncItemDetailsFromCloud(){
+  if(!isCloudActive || !db) return;
+  try {
+    var snap = await db.collection("item_details").get();
+    snap.forEach(function(doc){
+      var data = doc.data();
+      customDetails[doc.id] = data;
+    });
+    try { localStorage.setItem(DETAILS_KEY, JSON.stringify(customDetails)); } catch(e){}
+    buildItemIndex();
+  } catch(e){ console.log("Cloud details load:", e); }
 }
 
 function updateCloudBadge(online, text){
