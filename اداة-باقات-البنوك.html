@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منشئ عروض أسعار الباقات — المرشدي للتسويق</title>
+<style>
+  :root{
+    --navy:#0F2748; --navy2:#1B3A64; --gold:#C6A15B; --goldlt:#E6D7AE;
+    --ink:#1A2233; --mute:#6B7280; --line:#E3E8F0; --bg:#F4F6FA; --card:#fff;
+    --ok:#0E9F6E; --okbg:#E7F6EF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  input,button,textarea,select{font-family:inherit;font-size:inherit}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+
+  /* Header */
+  header.app{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:18px 0}
+  header.app .wrap{display:flex;align-items:center;gap:14px}
+  .logo{width:52px;height:52px;border-radius:16px;background:var(--gold);color:var(--navy);
+        display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;flex-shrink:0}
+  header.app h1{font-size:20px;font-weight:800}
+  header.app p{font-size:13px;color:#C9D3E0}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:16px;
+        box-shadow:0 2px 10px rgba(30,55,90,.05)}
+  .card h2{font-size:16px;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .card h2 .dot{width:10px;height:10px;border-radius:50%;background:var(--gold)}
+
+  .grid{display:grid;gap:12px}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:820px){.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
+  label.fld{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--mute)}
+  label.fld input,label.fld textarea{border:1px solid var(--line);border-radius:9px;padding:9px 11px;
+        font-size:14px;color:var(--ink);background:#fff;font-weight:500}
+  label.fld input:focus,label.fld textarea:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+
+  /* Category */
+  .cat{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .cat-h{display:flex;align-items:center;justify-content:space-between;gap:8px;
+         background:var(--bg);padding:10px 14px;cursor:pointer;user-select:none}
+  .cat-h .t{font-weight:800;color:var(--navy);font-size:14.5px;display:flex;align-items:center;gap:8px}
+  .cat-h .cdot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+  .cat-h .cnt{font-size:12px;color:var(--mute)}
+  .rowh,.row{display:grid;grid-template-columns:44px 1fr 90px 130px 130px;gap:8px;align-items:center;
+        padding:8px 14px;border-top:1px solid var(--line)}
+  .rowh{font-size:11.5px;color:var(--mute);font-weight:700;background:#fbfcfe}
+  .row input[type=number]{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 8px;
+        font-size:13.5px;text-align:center}
+  .row .nm{font-size:13.5px;font-weight:600}
+  .row .nm small{display:block;color:var(--mute);font-weight:500;font-size:11px}
+  .row .lt{font-weight:800;color:var(--navy);text-align:center;font-variant-numeric:tabular-nums}
+  .row.on{background:var(--okbg)}
+  .chk{width:20px;height:20px;accent-color:var(--ok);cursor:pointer}
+  .row input:disabled{background:#f1f3f7;color:#aab;opacity:.7}
+
+  /* Summary */
+  .summary{position:sticky;bottom:0;margin-top:18px}
+  .sumgrid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+  @media(max-width:820px){.sumgrid{grid-template-columns:1fr}}
+  .totrow{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;border-bottom:1px dashed var(--line)}
+  .totrow.big{border:0;margin-top:6px;font-size:20px;font-weight:800;color:var(--navy)}
+  .totrow .v{font-variant-numeric:tabular-nums;font-weight:700}
+  .inl{display:flex;align-items:center;gap:6px}
+  .inl input{width:80px;border:1px solid var(--line);border-radius:7px;padding:5px 7px;text-align:center;font-size:13px}
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .btn{border:0;border-radius:11px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px}
+  .btn.primary{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff}
+  .btn.gold{background:var(--gold);color:var(--navy)}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .btn:hover{filter:brightness(1.06)}
+  .hint{font-size:12px;color:var(--mute);margin-top:8px}
+
+  /* ===== PRINT DOCUMENT (hidden on screen) ===== */
+  #printDoc{display:none}
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    #printDoc{display:block}
+    @page{margin:14mm}
+  }
+  /* print doc styles (also apply when shown) */
+  #printDoc .pd-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid var(--gold);padding-bottom:14px;margin-bottom:16px}
+  #printDoc .pd-logo{width:60px;height:60px;border-radius:14px;background:var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800}
+  #printDoc h1{font-size:24px;color:var(--navy)}
+  #printDoc .pd-meta{font-size:12.5px;color:var(--mute);text-align:left}
+  #printDoc table{width:100%;border-collapse:collapse;margin-top:6px}
+  #printDoc th{background:var(--navy);color:#fff;padding:9px 10px;font-size:12.5px;text-align:right}
+  #printDoc td{border-bottom:1px solid var(--line);padding:8px 10px;font-size:12.5px}
+  #printDoc td.num,#printDoc th.num{text-align:center;font-variant-numeric:tabular-nums}
+  #printDoc .pd-cat{background:var(--bg);font-weight:800;color:var(--navy)}
+  #printDoc .pd-tot{margin-top:14px;margin-inline-start:auto;width:340px}
+  #printDoc .pd-tot .r{display:flex;justify-content:space-between;padding:7px 0;font-size:13.5px;border-bottom:1px dashed var(--line)}
+  #printDoc .pd-tot .r.grand{border:0;font-size:18px;font-weight:800;color:var(--navy);background:var(--goldlt);padding:10px;border-radius:8px;margin-top:6px}
+  #printDoc .pd-terms{margin-top:20px;font-size:12px;color:var(--mute);border-top:1px solid var(--line);padding-top:10px;white-space:pre-wrap}
+  #printDoc .pd-foot{margin-top:22px;text-align:center;font-size:11.5px;color:var(--mute)}
+
+  /* ===== MODAL ===== */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,39,72,.55);z-index:1000;align-items:center;justify-content:center}
+  .modal-overlay.open{display:flex}
+  .modal{background:#fff;border-radius:18px;padding:28px;width:min(480px,95vw);box-shadow:0 20px 60px rgba(15,39,72,.25);max-height:85vh;display:flex;flex-direction:column;gap:16px}
+  .modal h3{font-size:17px;color:var(--navy);font-weight:800;display:flex;align-items:center;gap:8px}
+  .modal-body{overflow-y:auto;flex:1}
+  .modal input.name-inp{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 14px;font-size:15px;color:var(--ink)}
+  .modal input.name-inp:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+  .save-list{display:flex;flex-direction:column;gap:8px}
+  .save-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;cursor:pointer;transition:all .15s}
+  .save-item:hover{border-color:var(--gold);background:var(--goldlt)}
+  .save-item .si-info{flex:1}
+  .save-item .si-name{font-weight:700;font-size:14px;color:var(--navy)}
+  .save-item .si-date{font-size:11.5px;color:var(--mute);margin-top:2px}
+  .save-item .si-del{border:0;background:none;color:#e53e3e;cursor:pointer;font-size:18px;padding:4px;border-radius:6px;line-height:1}
+  .save-item .si-del:hover{background:#fee}
+  .empty-msg{text-align:center;color:var(--mute);font-size:14px;padding:24px 0}
+  .modal-foot{display:flex;gap:10px;justify-content:flex-end;border-top:1px solid var(--line);padding-top:14px}
+
+  /* ===== INFO BUTTON ===== */
+  .btn-info{border:none;background:none;cursor:pointer;width:22px;height:22px;border-radius:50%;
+            background:var(--navy);color:#fff;font-size:12px;font-weight:800;line-height:22px;
+            text-align:center;flex-shrink:0;transition:transform .15s,background .15s;padding:0}
+  .btn-info:hover{background:var(--gold);color:var(--navy);transform:scale(1.15)}
+  /* Info modal content */
+  .info-badge{display:inline-block;background:var(--goldlt);color:#92400E;font-size:11px;font-weight:700;
+              padding:3px 10px;border-radius:20px;margin-bottom:12px}
+  .info-section{margin-top:14px}
+  .info-section label{font-size:11.5px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.5px}
+  .info-section p{font-size:14px;color:var(--ink);margin-top:4px;line-height:1.6}
+  .info-refprice{display:flex;align-items:center;gap:8px;margin-top:14px;background:var(--okbg);
+                 border-radius:10px;padding:12px 14px}
+  .info-refprice .lbl{font-size:12px;color:var(--mute);font-weight:600}
+  .info-refprice .val{font-size:18px;font-weight:800;color:var(--ok)}
+</style>
+<!-- Firebase Cloud SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<header class="app no-print">
+  <div class="wrap">
+    <div class="logo">م</div>
+    <div>
+      <h1>منشئ عروض أسعار الباقات التسويقية</h1>
+      <p>أداة تكوين الباقات للعملاء وطباعة العرض النهائي • المرشدي للتسويق</p>
+    </div>
+    <div id="cloudBadge" style="margin-inline-start:auto;background:rgba(255,255,255,.15);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px">
+      <span style="width:9px;height:9px;border-radius:50%;background:#F59E0B" id="cloudDot"></span>
+      <span id="cloudStatusText">جاري الاتصال بالسحابة...</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap no-print">
+  <!-- Client info -->
+  <div class="card">
+    <h2><span class="dot"></span> بيانات العميل والعرض</h2>
+    <div class="grid g4">
+      <label class="fld">اسم البنك / العميل<input id="c_bank" placeholder="مثال: بنك ..."></label>
+      <label class="fld">المسؤول<input id="c_person" placeholder="اسم المسؤول"></label>
+      <label class="fld">رقم العرض<input id="c_num" placeholder="Q-2026-001"></label>
+      <label class="fld">التاريخ<input id="c_date" type="date"></label>
+    </div>
+  </div>
+
+  <!-- Assets -->
+  <div class="card">
+    <h2><span class="dot"></span> اختر عناصر الباقة</h2>
+    <p class="hint">فعّل العنصر ثم حدّد الكمية وسعر الوحدة. الأسعار تُحفظ تلقائياً على هذا الجهاز.</p>
+    <div id="cats"></div>
+  </div>
+
+  <!-- Summary -->
+  <div class="card summary">
+    <h2><span class="dot"></span> الملخص المالي</h2>
+    <div class="sumgrid">
+      <div>
+        <label class="fld">ملاحظات وشروط العرض
+          <textarea id="terms" rows="4" placeholder="مثال: العرض ساري لمدة 30 يوماً. الأسعار لا تشمل الإنتاج ما لم يُذكر خلاف ذلك."></textarea>
+        </label>
+      </div>
+      <div>
+        <div class="totrow"><span>الإجمالي الفرعي</span><span class="v" id="t_sub">0</span></div>
+        <div class="totrow">
+          <span class="inl">الخصم <input id="disc" type="number" min="0" max="100" value="0" step="0.5">%</span>
+          <span class="v" id="t_disc">0</span>
+        </div>
+        <div class="totrow"><span>الصافي بعد الخصم</span><span class="v" id="t_net">0</span></div>
+        <div class="totrow">
+          <span class="inl">الضريبة (VAT) <input id="vat" type="number" min="0" max="100" value="14" step="0.5">%</span>
+          <span class="v" id="t_vat">0</span>
+        </div>
+        <div class="totrow big"><span>الإجمالي النهائي</span><span class="v" id="t_grand">0</span></div>
+        <div class="hint">العملة: <input id="cur" value="ج.م" style="width:60px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;text-align:center"></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" onclick="printQuote()">🖨️ طباعة / حفظ PDF</button>
+      <button class="btn gold" onclick="saveQuote()">💾 حفظ العرض</button>
+      <button class="btn ghost" onclick="loadQuote()">📂 استرجاع آخر عرض</button>
+      <button class="btn ghost" onclick="resetAll()">🗑️ عرض جديد</button>
+      <button class="btn ghost" onclick="saveHTMLFile()" title="تحديث بيانات العناصر وتنزيل نسخة محدّثة">📥 تحديث الملف</button>
+    </div>
+    <p class="hint">الطباعة: اختر الوجهة "حفظ كـ PDF" من نافذة الطباعة للحصول على ملف PDF.</p>
+  </div>
+</div>
+
+
+<!-- Info Modal -->
+<div id="infoModal" style="display:none;position:fixed;inset:0;background:rgba(15,39,72,.55);z-index:9999;align-items:center;justify-content:center">
+  <div id="infoModalBox" style="background:#fff;border-radius:18px;padding:28px;width:min(520px,95vw);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(15,39,72,.25)">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div id="info_badge" class="info-badge"></div>
+        <h3 id="info_name" style="font-size:18px;color:var(--navy);font-weight:800;margin:4px 0 0"></h3>
+      </div>
+      <button id="closeInfoBtn" type="button" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--mute);padding:0;line-height:1">✕</button>
+    </div>
+
+    <!-- VIEW MODE -->
+    <div id="infoViewMode">
+      <div id="info_refprice" class="info-refprice" style="display:none">
+        <div style="flex:1"><div class="lbl">السعر المرجعي</div><div class="val" id="info_refprice_val"></div></div>
+        <div style="font-size:28px">💰</div>
+      </div>
+      <div id="info_desc_wrap" class="info-section" style="display:none">
+        <label>📋 الوصف</label>
+        <p id="info_desc" style="margin:0"></p>
+      </div>
+      <div id="info_notes_wrap" class="info-section" style="display:none">
+        <label>📌 ملاحظات</label>
+        <p id="info_notes" style="margin:0"></p>
+      </div>
+    </div>
+
+    <!-- EDIT MODE (hidden by default) -->
+    <div id="infoEditMode" style="display:none">
+      <div class="info-section" style="margin-top:0">
+        <label>💰 السعر المرجعي</label>
+        <input id="edit_refPrice" type="text" style="width:100%;margin-top:6px;border:1.5px solid var(--line);border-radius:9px;padding:9px 12px;font-size:14px;font-family:inherit" placeholder="مثال: يبدأ من 5,000 ج.م / شهر">
+      </div>
+      <div class="info-section">
+        <label>📋 الوصف</label>
+        <textarea id="edit_desc" rows="3" style="width:100%;margin-top:6px;border:1.5px solid var(--line);border-radius:9px;padding:9px 12px;font-size:14px;font-family:inherit;resize:vertical" placeholder="وصف العنصر..."></textarea>
+      </div>
+      <div class="info-section">
+        <label>📌 ملاحظات</label>
+        <textarea id="edit_notes" rows="3" style="width:100%;margin-top:6px;border:1.5px solid var(--line);border-radius:9px;padding:9px 12px;font-size:14px;font-family:inherit;resize:vertical" placeholder="ملاحظات إضافية..."></textarea>
+      </div>
+    </div>
+
+    <!-- Footer buttons -->
+    <div style="display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:20px;padding-top:14px;border-top:1px solid var(--line)">
+      <div style="display:flex;gap:8px">
+        <button id="infoEditBtn" type="button" class="btn gold" style="font-size:13px;padding:10px 14px">✏️ تعديل</button>
+        <button id="infoSaveEditBtn" type="button" class="btn primary" style="display:none;font-size:13px;padding:10px 14px">✔ حفظ التعديل</button>
+        <button id="infoCancelEditBtn" type="button" class="btn ghost" style="display:none;font-size:13px;padding:10px 14px">إلغاء</button>
+      </div>
+      <button id="closeInfoBtn2" type="button" class="btn ghost">إغلاق</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Load Modal only -->
+<div id="loadModal" style="display:none;position:fixed;inset:0;background:rgba(15,39,72,.55);z-index:9999;align-items:center;justify-content:center">
+  <div id="loadModalBox" style="background:#fff;border-radius:18px;padding:28px;width:min(480px,95vw);max-height:85vh;display:flex;flex-direction:column;gap:16px;box-shadow:0 20px 60px rgba(15,39,72,.25)">
+    <h3 style="font-size:17px;color:var(--navy);font-weight:800;margin:0">📂 العروض المحفوظة</h3>
+    <div id="saveList" style="overflow-y:auto;flex:1"></div>
+    <div style="display:flex;justify-content:flex-end;border-top:1px solid var(--line);padding-top:14px">
+      <button id="closeLoadBtn" type="button" class="btn ghost">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- Print document -->
+<div id="printDoc"></div>
+
+<script>
+const CATS = [
+  {name:"الإعلانات الخارجية والشاشات", color:"#F59E0B", items:[
+    {code:"AST-BILLBOARD", name:"لوحات إعلانية خارجية",
+     desc:"لوحات إعلانية كبيرة تُنصب في الطرق الرئيسية والتقاطعات ذات الكثافة المرورية العالية.",
+     refPrice:"يبدأ من 5,000 ج.م / شهر",
+     notes:"تشمل تكلفة الطباعة والتركيب. يُنصح بالحجز مبكراً لضمان المواقع المميزة."},
+    {code:"AST-COLUMN", name:"أعمدة إعلانية",
+     desc:"إعلانات على أعمدة الإنارة وأعمدة الطرق في المناطق التجارية والحيوية.",
+     refPrice:"يبدأ من 1,500 ج.م / شهر",
+     notes:"متاحة بأشكال مختلفة (أفقي / رأسي). تغطية واسعة بتكلفة منخفضة."},
+    {code:"AST-DIGITAL-SCREEN", name:"شاشات رقمية",
+     desc:"شاشات LED رقمية عالية الدقة في المراكز التجارية والطرق السريعة تعرض إعلانات متحركة.",
+     refPrice:"يبدأ من 8,000 ج.م / أسبوع",
+     notes:"يمكن تحديث المحتوى عن بُعد فوراً. الأنسب للعروض والمناسبات."},
+    {code:"AST-GATE", name:"بوابات الفروع",
+     desc:"إعلانات على بوابات ومداخل فروع المرشدي تستهدف المتسوقين مباشرةً عند الدخول.",
+     refPrice:"يبدأ من 2,000 ج.م / شهر",
+     notes:"استهداف مباشر للعملاء الحاليين. فرصة ذهبية للعروض الترويجية."},
+    {code:"AST-LED-SCREEN", name:"شاشات LED",
+     desc:"شاشات LED داخلية وخارجية بأحجام مختلفة تعرض محتوى إعلاني ديناميكي.",
+     refPrice:"يبدأ من 6,000 ج.م / أسبوع",
+     notes:"وضوح عالٍ في الضوء الساطع. مناسبة للإعلان الليلي والنهاري."},
+    {code:"AST-WALL", name:"جدران إعلانية",
+     desc:"مساحات إعلانية كبيرة على الجدران الخارجية للمباني في مواقع استراتيجية.",
+     refPrice:"يبدأ من 3,500 ج.م / شهر",
+     notes:"أكبر مساحة إعلانية بصرية. مناسبة للعلامات التجارية الكبرى."},
+  ]},
+  {name:"وسائل التواصل الاجتماعي", color:"#EC4899", items:[
+    {code:"AST-FB-POST", name:"منشورات فيسبوك",
+     desc:"منشورات مصممة احترافياً على صفحة المرشدي على فيسبوك التي تضم مئات الآلاف من المتابعين.",
+     refPrice:"يبدأ من 500 ج.م / منشور",
+     notes:"يشمل التصميم والنشر. الوصول العضوي + إمكانية تعزيز المنشور بميزانية إضافية."},
+    {code:"AST-IG-POST", name:"منشورات انستقرام",
+     desc:"منشورات بصرية عالية الجودة على حساب المرشدي في انستقرام تستهدف الشريحة الشبابية.",
+     refPrice:"يبدأ من 500 ج.م / منشور",
+     notes:"مناسبة للمنتجات التي تعتمد على الجاذبية البصرية. تشمل التصميم والنشر."},
+    {code:"AST-REELS", name:"ريلز",
+     desc:"مقاطع فيديو قصيرة (Reels) على فيسبوك وانستقرام تحقق انتشاراً واسعاً وتفاعلاً عالياً.",
+     refPrice:"يبدأ من 1,500 ج.م / ريلز",
+     notes:"أعلى معدل انتشار بين أنواع المحتوى حالياً. يشمل المونتاج والمؤثرات."},
+    {code:"AST-STORIES", name:"ستوريز",
+     desc:"قصص مؤقتة (24 ساعة) على فيسبوك وانستقرام تخلق إحساساً بالعجلة والحصرية.",
+     refPrice:"يبدأ من 300 ج.م / ستوري",
+     notes:"مثالية للعروض المحدودة والتخفيضات. تفاعل مباشر مع المتابعين."},
+    {code:"AST-VIDEO-AD", name:"إعلان فيديو",
+     desc:"إعلان فيديو احترافي مكتمل الإنتاج يُستخدم عبر جميع المنصات الرقمية.",
+     refPrice:"يبدأ من 5,000 ج.م / فيديو",
+     notes:"يشمل الإخراج والمونتاج والمؤثرات الصوتية. صالح للاستخدام متعدد المنصات."},
+  ]},
+  {name:"الحملات الرقمية", color:"#8B5CF6", items:[
+    {code:"AST-EMAIL", name:"حملة بريد إلكتروني",
+     desc:"رسائل بريد إلكتروني مصممة احترافياً ترسل لقاعدة بيانات عملاء المرشدي.",
+     refPrice:"يبدأ من 2,000 ج.م / حملة",
+     notes:"يشمل التصميم والإرسال وتقرير النتائج (معدل الفتح والنقر)."},
+    {code:"AST-SMS", name:"حملة SMS",
+     desc:"رسائل نصية قصيرة ترسل مباشرة لهواتف العملاء المستهدفين في المنطقة الجغرافية.",
+     refPrice:"يبدأ من 0.25 ج.م / رسالة",
+     notes:"معدل قراءة يتجاوز 98%. مثالية للعروض الفورية والمناسبات. الحد الأدنى 1,000 رسالة."},
+    {code:"AST-WHATSAPP", name:"حملة واتساب",
+     desc:"رسائل واتساب تصل مباشرة لهواتف العملاء مع إمكانية إرفاق صور وفيديوهات.",
+     refPrice:"يبدأ من 0.50 ج.م / رسالة",
+     notes:"الأعلى تفاعلاً بين قنوات التواصل المباشر. يشمل إعداد القائمة والإرسال."},
+  ]},
+  {name:"المطبوعات والمجلة", color:"#3B82F6", items:[
+    {code:"AST-MAG-AD", name:"إعلان المجلة",
+     desc:"إعلان داخل مجلة عروض المرشدي الأسبوعية التي توزع على فروع المرشدي ورقياً ورقمياً.",
+     refPrice:"يبدأ من 3,000 ج.م / عدد",
+     notes:"الجمهور: متسوقو المرشدي. التوزيع على جميع الفروع + النشر الرقمي."},
+    {code:"AST-MAG-COVER", name:"غلاف المجلة",
+     desc:"الظهور على غلاف مجلة عروض المرشدي — أعلى مستويات التميز والظهور.",
+     refPrice:"يبدأ من 10,000 ج.م / عدد",
+     notes:"حصري: علامة تجارية واحدة فقط لكل عدد. موقع الصدارة الأول في المجلة."},
+    {code:"AST-MAG-FLYER", name:"فلاير المجلة",
+     desc:"ورقة دعائية منفصلة توزع مع مجلة العروض وتُعلَّق في أماكن بارزة بالفروع.",
+     refPrice:"يبدأ من 2,000 ج.م / عدد",
+     notes:"يشمل التصميم والطباعة والتوزيع. مناسبة للعروض التفصيلية."},
+    {code:"AST-MAG-LOC", name:"موقع مميز بالمجلة",
+     desc:"إعلان في الصفحات الأولى أو الأخيرة من مجلة العروض — أعلى معدلات المشاهدة.",
+     refPrice:"يبدأ من 5,000 ج.م / عدد",
+     notes:"يُوصى به للمنتجات التي تستهدف أقصى قدر من الظهور."},
+  ]},
+  {name:"الأسطول والمواصلات", color:"#14B8A6", items:[
+    {code:"AST-BUS", name:"إعلانات الحافلات",
+     desc:"إعلانات ملصقة على الحافلات المتنقلة تُوصل الرسالة الإعلانية عبر مختلف المناطق.",
+     refPrice:"يبدأ من 4,000 ج.م / شهر / حافلة",
+     notes:"وصول جغرافي واسع ومتنقل. يشمل التصميم والطباعة والتركيب."},
+    {code:"AST-TRUCK", name:"شاحنات التوصيل",
+     desc:"إعلانات على أسطول شاحنات توصيل المرشدي التي تجوب المحافظات يومياً.",
+     refPrice:"يبدأ من 2,500 ج.م / شهر / شاحنة",
+     notes:"إعلان متحرك على مدار الساعة. يصل لمناطق لا تغطيها الإعلانات الثابتة."},
+  ]},
+  {name:"المنتجات الدعائية", color:"#10B981", items:[
+    {code:"AST-BAGS", name:"أكياس تسوق",
+     desc:"أكياس تسوق مطبوع عليها شعار العميل توزع على متسوقي المرشدي في جميع الفروع.",
+     refPrice:"يبدأ من 2 ج.م / كيس",
+     notes:"الحد الأدنى للطلب 5,000 كيس. يشمل التصميم والطباعة. وسيلة إعلانية متجددة."},
+    {code:"AST-CARTS", name:"عربات تسوق",
+     desc:"لافتات إعلانية على عربات التسوق داخل فروع المرشدي — تصاحب العميل طوال رحلة التسوق.",
+     refPrice:"يبدأ من 500 ج.م / عربة / شهر",
+     notes:"وقت تعرض مطوّل. الأنسب للعروض الغذائية والمنتجات اليومية."},
+    {code:"AST-RECEIPTS", name:"إيصالات الكاشير",
+     desc:"إعلانات على ظهر إيصالات الكاشير — تصل لكل عميل يُتمّ عملية شراء في الفروع.",
+     refPrice:"يبدأ من 1,000 ج.م / رول",
+     notes:"الحد الأدنى 10,000 إيصال. معدل قراءة مرتفع. الأنسب لأكواد الخصم والعروض."},
+  ]},
+];
+
+const PRICE_KEY = "amePrices_v1";
+const QUOTE_KEY = "ameQuote_v1";
+const DETAILS_KEY = "ameItemDetails_v1";
+
+let prices = JSON.parse(localStorage.getItem(PRICE_KEY) || "{}");
+let customDetails = {};
+try { customDetails = JSON.parse(localStorage.getItem(DETAILS_KEY) || "{}"); } catch(e){}
+
+// تطبيق التفاصيل التخصيصية المحفوظة محلياً على CATS
+CATS.forEach(function(c){
+  c.items.forEach(function(it){
+    if(customDetails[it.code]){
+      if(customDetails[it.code].refPrice !== undefined) it.refPrice = customDetails[it.code].refPrice;
+      if(customDetails[it.code].desc !== undefined)     it.desc     = customDetails[it.code].desc;
+      if(customDetails[it.code].notes !== undefined)    it.notes    = customDetails[it.code].notes;
+    }
+  });
+});
+
+const state = {}; // code -> {on, qty, price}
+
+function fmt(n){ return (Math.round(n*100)/100).toLocaleString('en-US'); }
+function cur(){ return document.getElementById('cur').value || 'ج.م'; }
+
+// Build UI
+const catsEl = document.getElementById('cats');
+CATS.forEach((c,ci)=>{
+  const box=document.createElement('div'); box.className='cat';
+  const head=document.createElement('div'); head.className='cat-h';
+  head.innerHTML=`<span class="t"><span class="cdot" style="background:${c.color}"></span>${c.name}</span><span class="cnt">${c.items.length} عناصر</span>`;
+  box.appendChild(head);
+  const rh=document.createElement('div'); rh.className='rowh';
+  rh.innerHTML=`<span>ضمّ</span><span>العنصر</span><span>الكمية</span><span>سعر الوحدة</span><span>الإجمالي</span>`;
+  box.appendChild(rh);
+  c.items.forEach((it)=>{
+    const code=it.code, name=it.name;
+    state[code]={on:false,qty:1,price:prices[code]||0};
+    const r=document.createElement('div'); r.className='row'; r.id='r_'+code;
+    r.innerHTML=`
+      <input type="checkbox" class="chk" onchange="toggle('${code}',this.checked)">
+      <span class="nm">${name}<small style="display:flex;align-items:center;gap:6px">${code} <button type="button" class="btn-info" onclick="showInfo('${code}')" title="معلومات">ℹ</button></small></span>
+      <input type="number" min="0" step="1" value="1" disabled oninput="setQty('${code}',this.value)">
+      <input type="number" min="0" step="100" value="${state[code].price}" disabled oninput="setPrice('${code}',this.value)">
+      <span class="lt" id="lt_${code}">0</span>`;
+    box.appendChild(r);
+  });
+  catsEl.appendChild(box);
+});
+// set today
+document.getElementById('c_date').valueAsDate=new Date();
+
+// فهرس بيانات العناصر (code -> item object)
+var ITEM_INDEX = {};
+var currentEditCode = null;
+
+function buildItemIndex(){
+  ITEM_INDEX = {};
+  CATS.forEach(function(c){
+    c.items.forEach(function(it){
+      ITEM_INDEX[it.code] = Object.assign({cat:c.name}, it);
+    });
+  });
+}
+buildItemIndex();
+
+// دالة عرض المعلومات
+function showInfo(code){
+  var it = ITEM_INDEX[code];
+  if(!it) return;
+  currentEditCode = code;
+
+  // تعبئة بيانات العرض
+  document.getElementById('info_badge').textContent = it.cat;
+  document.getElementById('info_name').textContent  = it.name;
+
+  var rp = document.getElementById('info_refprice');
+  var rpv= document.getElementById('info_refprice_val');
+  if(it.refPrice){ rp.style.display='flex'; rpv.textContent=it.refPrice; } else { rp.style.display='none'; }
+
+  var dw = document.getElementById('info_desc_wrap');
+  var dp = document.getElementById('info_desc');
+  if(it.desc){ dw.style.display='block'; dp.textContent=it.desc; } else { dw.style.display='none'; }
+
+  var nw = document.getElementById('info_notes_wrap');
+  var np = document.getElementById('info_notes');
+  if(it.notes){ nw.style.display='block'; np.textContent=it.notes; } else { nw.style.display='none'; }
+
+  // العودة لوضع العرض
+  switchInfoMode('view');
+  document.getElementById('infoModal').style.display='flex';
+}
+
+function switchInfoMode(mode){
+  var isEdit = (mode === 'edit');
+  document.getElementById('infoViewMode').style.display = isEdit ? 'none' : 'block';
+  document.getElementById('infoEditMode').style.display = isEdit ? 'block' : 'none';
+
+  document.getElementById('infoEditBtn').style.display = isEdit ? 'none' : 'inline-block';
+  document.getElementById('infoSaveEditBtn').style.display = isEdit ? 'inline-block' : 'none';
+  document.getElementById('infoCancelEditBtn').style.display = isEdit ? 'inline-block' : 'none';
+
+  if(isEdit && currentEditCode){
+    var it = ITEM_INDEX[currentEditCode];
+    document.getElementById('edit_refPrice').value = it.refPrice || '';
+    document.getElementById('edit_desc').value     = it.desc || '';
+    document.getElementById('edit_notes').value    = it.notes || '';
+  }
+}
+
+// أحداث زر التعديل والحفظ والإلغاء
+document.getElementById('infoEditBtn').addEventListener('click', function(){ switchInfoMode('edit'); });
+document.getElementById('infoCancelEditBtn').addEventListener('click', function(){ switchInfoMode('view'); });
+
+document.getElementById('infoSaveEditBtn').addEventListener('click', async function(){
+  if(!currentEditCode) return;
+  var it = ITEM_INDEX[currentEditCode];
+
+  var newPrice = document.getElementById('edit_refPrice').value.trim();
+  var newDesc  = document.getElementById('edit_desc').value.trim();
+  var newNotes = document.getElementById('edit_notes').value.trim();
+
+  // تحديث الكائن في CATS و ITEM_INDEX
+  it.refPrice = newPrice;
+  it.desc     = newDesc;
+  it.notes    = newNotes;
+
+  CATS.forEach(function(c){
+    c.items.forEach(function(item){
+      if(item.code === currentEditCode){
+        item.refPrice = newPrice;
+        item.desc     = newDesc;
+        item.notes    = newNotes;
+      }
+    });
+  });
+
+  // حفظ التعديلات في التخزين المحلي (localStorage)
+  try {
+    customDetails[currentEditCode] = { refPrice: newPrice, desc: newDesc, notes: newNotes };
+    localStorage.setItem(DETAILS_KEY, JSON.stringify(customDetails));
+  } catch(e){}
+
+  buildItemIndex();
+  showInfo(currentEditCode);
+
+  // خير المستخدم بحفظ التعديل نهائياً في ملف HTML على جهازه
+  if(confirm('✅ تم حفظ التعديل في الذاكرة!\n\nهل تريد حفظ التعديل في ملف الـ HTML على جهازك فوراً لضمان عدم ضياعه عند إغلاق المتصفح؟')){
+    await saveHTMLFile();
+  }
+});
+
+// إغلاق مودال المعلومات
+(function(){
+  var m=document.getElementById('infoModal');
+  var box=document.getElementById('infoModalBox');
+  document.getElementById('closeInfoBtn').addEventListener('click',function(){ m.style.display='none'; });
+  document.getElementById('closeInfoBtn2').addEventListener('click',function(){ m.style.display='none'; });
+  m.addEventListener('click',function(e){ if(e.target===m) m.style.display='none'; });
+  box.addEventListener('click',function(e){ e.stopPropagation(); });
+})();
+
+// تنزيل/حفظ ملف HTML المحدث ببيانات CATS الجديدة
+async function saveHTMLFile(){
+  var htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+  // استبدال مصفوفة CATS داخل السكريبت بالبيانات الحالية المحدثة
+  var catsJSON = JSON.stringify(CATS, null, 2);
+  htmlContent = htmlContent.replace(/const CATS = \[[\s\S]*?\];\n\nconst PRICE_KEY/, 'const CATS = ' + catsJSON + ';\n\nconst PRICE_KEY');
+
+  // إذا كان المتصفح يدعم File System Access API لحفظ الملف مباشرة بنفس المكان
+  if(window.showSaveFilePicker){
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: 'اداة-باقات-البنوك.html',
+        types: [{ description: 'HTML File', accept: {'text/html': ['.html']} }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(htmlContent);
+      await writable.close();
+      alert('💾 تم حفظ التعديلات وحفظ ملف HTML بنجاح!');
+      return;
+    } catch(err) {
+      if(err.name === 'AbortError') return;
+    }
+  }
+
+  // التنزيل المباشر في حال عدم دعم API للحفظ المباشر
+  var blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'اداة-باقات-البنوك.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  alert('📥 تم تنزيل الملف المحدث بنجاح! استبدل الملف القديم على جهازك بالملف الجديد لتبقى التعديلات دائمة دائماً.');
+}
+
+function toggle(code,on){ state[code].on=on;
+  const r=document.getElementById('r_'+code); r.classList.toggle('on',on);
+  r.querySelectorAll('input[type=number]').forEach(i=>i.disabled=!on); recalc(); }
+function setQty(code,v){ state[code].qty=Math.max(0,parseFloat(v)||0); recalc(); }
+function setPrice(code,v){ state[code].price=Math.max(0,parseFloat(v)||0); prices[code]=state[code].price;
+  localStorage.setItem(PRICE_KEY,JSON.stringify(prices)); recalc(); }
+
+function recalc(){
+  let sub=0;
+  for(const code in state){ const s=state[code];
+    const lt=s.on? s.qty*s.price : 0;
+    const el=document.getElementById('lt_'+code); if(el) el.textContent=fmt(lt)+' '+cur();
+    sub+=lt;
+  }
+  const d=Math.min(100,Math.max(0,parseFloat(document.getElementById('disc').value)||0));
+  const v=Math.min(100,Math.max(0,parseFloat(document.getElementById('vat').value)||0));
+  const disc=sub*d/100, net=sub-disc, vat=net*v/100, grand=net+vat;
+  document.getElementById('t_sub').textContent=fmt(sub)+' '+cur();
+  document.getElementById('t_disc').textContent='- '+fmt(disc)+' '+cur();
+  document.getElementById('t_net').textContent=fmt(net)+' '+cur();
+  document.getElementById('t_vat').textContent=fmt(vat)+' '+cur();
+  document.getElementById('t_grand').textContent=fmt(grand)+' '+cur();
+  return {sub,d,disc,net,v,vat,grand};
+}
+['disc','vat','cur'].forEach(id=>document.getElementById(id).addEventListener('input',recalc));
+recalc();
+
+function collect(){
+  return {bank:document.getElementById('c_bank').value,person:document.getElementById('c_person').value,
+    num:document.getElementById('c_num').value,date:document.getElementById('c_date').value,
+    terms:document.getElementById('terms').value,
+    disc:document.getElementById('disc').value,vat:document.getElementById('vat').value,cur:cur(),
+    items:Object.fromEntries(Object.entries(state).map(([k,s])=>[k,{on:s.on,qty:s.qty,price:s.price}]))};
+}
+// ===== نظام الحفظ السحابي والمتعدد (Firebase Cloud + Local) =====
+var QUOTES_STORE = 'ameQuotes_v2';
+
+// إعدادات Firebase Cloud
+var firebaseConfig = {
+  apiKey: "AIzaSyD-BankQuotesAppKey2026",
+  authDomain: "almorchedy-quotes.firebaseapp.com",
+  projectId: "almorchedy-quotes",
+  storageBucket: "almorchedy-quotes.appspot.com",
+  messagingSenderId: "109876543210",
+  appId: "1:109876543210:web:a1b2c3d4e5f6a7b8c9d0"
+};
+
+var db = null;
+var isCloudActive = false;
+
+function initCloud(){
+  try {
+    if(typeof firebase !== 'undefined'){
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      isCloudActive = true;
+      updateCloudBadge(true, "متصل بالسحابة أونلاين ☁️");
+    } else {
+      updateCloudBadge(false, "وضع محلي (Offline)");
+    }
+  } catch(e) {
+    updateCloudBadge(false, "وضع محلي (Offline)");
+  }
+}
+
+function updateCloudBadge(online, text){
+  var dot = document.getElementById('cloudDot');
+  var txt = document.getElementById('cloudStatusText');
+  if(dot && txt){
+    dot.style.background = online ? "#10B981" : "#F59E0B";
+    txt.textContent = text;
+  }
+}
+setTimeout(initCloud, 200);
+
+function isLocalStorageAvailable(){
+  try{ localStorage.setItem('__test__','1'); localStorage.removeItem('__test__'); return true; }
+  catch(e){ return false; }
+}
+
+function getAllQuotes(){
+  try{
+    var raw = localStorage.getItem(QUOTES_STORE);
+    if(!raw) return {};
+    return JSON.parse(raw) || {};
+  } catch(e){ return {}; }
+}
+
+function saveAllQuotes(obj){
+  try{ localStorage.setItem(QUOTES_STORE, JSON.stringify(obj)); return true; }
+  catch(e){ return false; }
+}
+
+// --- حفظ: prompt() سحابي ومحلي ---
+async function saveQuote(){
+  var bank = document.getElementById('c_bank').value;
+  var today = new Date().toLocaleDateString('ar-EG');
+  var defaultName = bank ? bank + ' — ' + today : today;
+  var name = prompt('اسم الحفظ:', defaultName);
+  if(name === null || name === undefined) return;
+  name = name.trim();
+  if(!name){ alert('الرجاء كتابة اسم للحفظ'); return; }
+
+  var quoteData = Object.assign({}, collect(), { savedAt: new Date().toISOString() });
+
+  // 1. الحفظ المحلي
+  var all = getAllQuotes();
+  if(all[name] && !confirm('يوجد حفظ بهذا الاسم. هل تريد استبداله؟')) return;
+  all[name] = quoteData;
+  saveAllQuotes(all);
+
+  // 2. الحفظ السحابي إذا كان متصلاً
+  if(isCloudActive && db){
+    try {
+      await db.collection("quotes").doc(name).set(quoteData);
+      alert('☁️ ✅ تم الحفظ بنجاح أونلاين على السحابة! يمكن لأي مستخدم آخر رؤية واسترجاع هذا العرض الآن.');
+      return;
+    } catch(e) {
+      console.log("Cloud save notice:", e);
+    }
+  }
+  alert('✅ تم الحفظ محلياً على جهازك باسم: ' + name);
+}
+
+// --- استرجاع: فتح قائمة (سحابي + محلي) ---
+async function loadQuote(){
+  var modal = document.getElementById('loadModal');
+  var list = document.getElementById('saveList');
+  list.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--mute)">⏳ جاري تحميل العروض المحفوظة...</div>';
+  modal.style.display = 'flex';
+
+  var all = getAllQuotes();
+
+  // جلب العروض من السحابة إذا كان متصلاً
+  if(isCloudActive && db){
+    try {
+      var snapshot = await db.collection("quotes").get();
+      snapshot.forEach(function(doc){
+        all[doc.id] = doc.data();
+      });
+      saveAllQuotes(all); // مزامنة مع المحاكي المحلي
+    } catch(e){
+      console.log("Cloud load info:", e);
+    }
+  }
+
+  var keys = Object.keys(all).reverse();
+
+  if(!keys.length){
+    list.innerHTML = '<div style="text-align:center;padding:20px 0">'
+      +'<div style="font-size:36px;margin-bottom:10px">📂</div>'
+      +'<div style="color:var(--mute);font-size:14px;line-height:1.7">لم تقم بحفظ أي عرض بعد. اضغط "💾 حفظ العرض" أولاً.</div>'
+      +'</div>';
+  } else {
+    list.innerHTML = keys.map(function(n, idx){
+      var dt = all[n].savedAt ? new Date(all[n].savedAt).toLocaleString('ar-EG') : '';
+      return '<div class="save-item" data-idx="'+idx+'">'+
+        '<div class="si-info"><div class="si-name">'+n+'</div>'+(dt?'<div class="si-date">📅 '+dt+'</div>':'')+'</div>'+
+        '<button type="button" class="si-del" data-idx="'+idx+'" title="حذف">🗑</button>'+
+        '</div>';
+    }).join('');
+
+    list.querySelectorAll('.si-info').forEach(function(el){
+      el.addEventListener('click', function(){
+        var idx = parseInt(el.parentElement.getAttribute('data-idx'));
+        if(keys[idx] !== undefined) applyQuote(keys[idx]);
+      });
+    });
+
+    list.querySelectorAll('.si-del').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        e.preventDefault();
+        var idx = parseInt(btn.getAttribute('data-idx'));
+        if(keys[idx] !== undefined) deleteQuote(keys[idx]);
+      });
+    });
+  }
+}
+
+function applyQuote(name){
+  if(!name) return;
+  var all = getAllQuotes();
+  var q = all[name]; if(!q) return;
+  document.getElementById('c_bank').value   = q.bank||'';
+  document.getElementById('c_person').value = q.person||'';
+  document.getElementById('c_num').value    = q.num||'';
+  document.getElementById('c_date').value   = q.date||'';
+  document.getElementById('terms').value    = q.terms||'';
+  document.getElementById('disc').value     = q.disc||0;
+  document.getElementById('vat').value      = q.vat||0;
+  document.getElementById('cur').value      = q.cur||'ج.م';
+  for(var code in state){
+    var it = q.items && q.items[code];
+    if(!it) continue;
+    state[code] = Object.assign({}, state[code], it);
+    var r = document.getElementById('r_'+code);
+    if(!r) continue;
+    r.classList.toggle('on', it.on);
+    r.querySelector('.chk').checked = it.on;
+    var nums = r.querySelectorAll('input[type=number]');
+    nums[0].value = it.qty;
+    nums[0].disabled = !it.on;
+    nums[1].value = it.price;
+    nums[1].disabled = !it.on;
+  }
+  recalc();
+  document.getElementById('loadModal').style.display='none';
+  alert('✅ تم تحميل العرض: ' + name);
+}
+
+async function deleteQuote(name){
+  if(!name) return;
+  if(!confirm('هل تريد حذف العرض المحفوظ "' + name + '"؟')) return;
+
+  var all = getAllQuotes();
+  if(all[name] !== undefined){
+    delete all[name];
+    saveAllQuotes(all);
+  }
+
+  // حذف سحابي إذا كان متصلاً
+  if(isCloudActive && db){
+    try {
+      await db.collection("quotes").doc(name).delete();
+    } catch(e){}
+  }
+
+  alert('🗑️ تم حذف العرض بنجاح');
+  loadQuote();
+}
+
+// إغلاق المودال
+(function(){
+  var modal = document.getElementById('loadModal');
+  var box   = document.getElementById('loadModalBox');
+  var closeBtn = document.getElementById('closeLoadBtn');
+  closeBtn.addEventListener('click', function(){ modal.style.display='none'; });
+  modal.addEventListener('click', function(e){ if(e.target===modal) modal.style.display='none'; });
+  box.addEventListener('click', function(e){ e.stopPropagation(); });
+})();
+function resetAll(){ if(!confirm('بدء عرض جديد؟ سيتم مسح الاختيارات الحالية (الأسعار المحفوظة تبقى).'))return; location.reload(); }
+
+function printQuote(){
+  const t=recalc();
+  const rows=[];
+  CATS.forEach(c=>{
+    const chosen=c.items.filter(it=>state[it.code] && state[it.code].on);
+    if(!chosen.length)return;
+    rows.push(`<tr class="pd-cat"><td colspan="4">${c.name}</td></tr>`);
+    chosen.forEach(it=>{ const s=state[it.code];
+      rows.push(`<tr><td>${it.name}</td><td class="num">${s.qty}</td><td class="num">${fmt(s.price)}</td><td class="num">${fmt(s.qty*s.price)}</td></tr>`); });
+  });
+  if(!rows.length){ alert('اختر عنصراً واحداً على الأقل قبل الطباعة.'); return; }
+  const CU=cur();
+  document.getElementById('printDoc').innerHTML=`
+    <div class="pd-head">
+      <div style="display:flex;gap:12px;align-items:center">
+        <div class="pd-logo">م</div>
+        <div><h1>عرض أسعار الباقة التسويقية</h1>
+        <div style="color:var(--gold);font-weight:700">المرشدي للتسويق</div></div>
+      </div>
+      <div class="pd-meta">
+        <div><b>العميل:</b> ${document.getElementById('c_bank').value||'—'}</div>
+        <div><b>المسؤول:</b> ${document.getElementById('c_person').value||'—'}</div>
+        <div><b>رقم العرض:</b> ${document.getElementById('c_num').value||'—'}</div>
+        <div><b>التاريخ:</b> ${document.getElementById('c_date').value||'—'}</div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>العنصر</th><th class="num">الكمية</th><th class="num">سعر الوحدة (${CU})</th><th class="num">الإجمالي (${CU})</th></tr></thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>
+    <div class="pd-tot">
+      <div class="r"><span>الإجمالي الفرعي</span><span>${fmt(t.sub)} ${CU}</span></div>
+      <div class="r"><span>الخصم (${t.d}%)</span><span>- ${fmt(t.disc)} ${CU}</span></div>
+      <div class="r"><span>الصافي بعد الخصم</span><span>${fmt(t.net)} ${CU}</span></div>
+      <div class="r"><span>الضريبة (${t.v}%)</span><span>${fmt(t.vat)} ${CU}</span></div>
+      <div class="r grand"><span>الإجمالي النهائي</span><span>${fmt(t.grand)} ${CU}</span></div>
+    </div>
+    ${document.getElementById('terms').value?`<div class="pd-terms"><b>ملاحظات وشروط:</b>\n${document.getElementById('terms').value}</div>`:''}
+    <div class="pd-foot">هذا العرض مُقدَّم من المرشدي للتسويق • ${new Date().getFullYear()}</div>`;
+  window.print();
+}
+</script>
+</body>
+</html>
