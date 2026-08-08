@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>منشئ عروض أسعار الباقات — المرشدي للتسويق</title>
+<title>منشئ عروض أسعار ال4باقات — المرشدي للتسويق</title>
 <style>
   :root{
     --navy:#0F2748; --navy2:#1B3A64; --gold:#C6A15B; --goldlt:#E6D7AE;
@@ -778,7 +778,7 @@ function saveAllQuotes(obj){
   catch(e){ return false; }
 }
 
-// --- حفظ: prompt() سحابي ومحلي ---
+// --- حفظ العروض على JSONBin ---
 async function saveQuote(){
   var bank = document.getElementById('c_bank').value;
   var today = new Date().toLocaleDateString('ar-EG');
@@ -790,45 +790,63 @@ async function saveQuote(){
 
   var quoteData = Object.assign({}, collect(), { savedAt: new Date().toISOString() });
 
-  // 1. الحفظ المحلي
+  // 1. حفظ محلي احتياطي
   var all = getAllQuotes();
   if(all[name] && !confirm('يوجد حفظ بهذا الاسم. هل تريد استبداله؟')) return;
   all[name] = quoteData;
   saveAllQuotes(all);
 
-  // 2. الحفظ السحابي إذا كان متصلاً
-  if(isCloudActive && db){
+  // 2. حفظ سحابي على JSONBin
+  if(isCloudActive){
     try {
-      await db.collection("quotes").doc(name).set(quoteData);
-      alert('☁️ ✅ تم الحفظ بنجاح أونلاين على السحابة! يمكن لأي مستخدم آخر رؤية واسترجاع هذا العرض الآن.');
-      return;
-    } catch(e) {
-      console.log("Cloud save notice:", e);
-    }
+      var controller = new AbortController();
+      setTimeout(function(){ controller.abort(); }, 8000);
+      // جلب البيانات الحالية
+      var getR = await fetch(JSONBIN_URL + '/latest', { headers: {'X-Master-Key': JSONBIN_KEY}, signal: controller.signal });
+      var existing = {};
+      if(getR.ok){ var gd = await getR.json(); existing = (gd.record && gd.record.quotes) ? gd.record.quotes : {}; }
+      existing[name] = quoteData;
+      // حفظ مدمجاً
+      var controller2 = new AbortController();
+      setTimeout(function(){ controller2.abort(); }, 8000);
+      var itemsCloud = (await (await fetch(JSONBIN_URL + '/latest', {headers:{'X-Master-Key':JSONBIN_KEY}})).json()).record || {};
+      var putR = await fetch(JSONBIN_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
+        body: JSON.stringify({ items: itemsCloud.items || {}, quotes: existing })
+      });
+      if(putR.ok){
+        alert('☁️ ✅ تم حفظ العرض بنجاح!\nيمكن استرجاعه من أي جهاز أو متصفح.');
+        return;
+      }
+    } catch(e){}
   }
-  alert('✅ تم الحفظ محلياً على جهازك باسم: ' + name);
+  alert('✅ تم الحفظ محلياً باسم: ' + name);
 }
 
-// --- استرجاع: فتح قائمة (سحابي + محلي) ---
+// --- استرجاع العروض من JSONBin ---
 async function loadQuote(){
   var modal = document.getElementById('loadModal');
   var list = document.getElementById('saveList');
-  list.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--mute)">⏳ جاري تحميل العروض المحفوظة...</div>';
+  list.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--mute)">&#x23F3; جاري تحميل العروض المحفوظة...</div>';
   modal.style.display = 'flex';
 
   var all = getAllQuotes();
 
-  // جلب العروض من السحابة إذا كان متصلاً
-  if(isCloudActive && db){
+  // جلب العروض من JSONBin إذا كان متصلاً
+  if(isCloudActive){
     try {
-      var snapshot = await db.collection("quotes").get();
-      snapshot.forEach(function(doc){
-        all[doc.id] = doc.data();
-      });
-      saveAllQuotes(all); // مزامنة مع المحاكي المحلي
-    } catch(e){
-      console.log("Cloud load info:", e);
-    }
+      var controller = new AbortController();
+      setTimeout(function(){ controller.abort(); }, 8000);
+      var resp = await fetch(JSONBIN_URL + '/latest', { headers: {'X-Master-Key': JSONBIN_KEY}, signal: controller.signal });
+      if(resp.ok){
+        var data = await resp.json();
+        var cloudQuotes = (data.record && data.record.quotes) ? data.record.quotes : {};
+        // دمج السحابي فوق المحلي
+        all = Object.assign({}, all, cloudQuotes);
+        saveAllQuotes(all);
+      }
+    } catch(e){}
   }
 
   var keys = Object.keys(all).reverse();
@@ -842,7 +860,7 @@ async function loadQuote(){
     list.innerHTML = keys.map(function(n, idx){
       var dt = all[n].savedAt ? new Date(all[n].savedAt).toLocaleString('ar-EG') : '';
       return '<div class="save-item" data-idx="'+idx+'">'+
-        '<div class="si-info"><div class="si-name">'+n+'</div>'+(dt?'<div class="si-date">📅 '+dt+'</div>':'')+'</div>'+
+        '<div class="si-info"><div class="si-name">'+n+'</div>'+(dt?'<div class="si-date">📅 '+dt+'</div>':'')+' </div>'+
         '<button type="button" class="si-del" data-idx="'+idx+'" title="حذف">🗑</button>'+
         '</div>';
     }).join('');
@@ -896,20 +914,33 @@ function applyQuote(name){
   alert('✅ تم تحميل العرض: ' + name);
 }
 
+// --- حذف العروض من JSONBin ---
 async function deleteQuote(name){
   if(!name) return;
   if(!confirm('هل تريد حذف العرض المحفوظ "' + name + '"؟')) return;
 
+  // حذف محلي
   var all = getAllQuotes();
   if(all[name] !== undefined){
     delete all[name];
     saveAllQuotes(all);
   }
 
-  // حذف سحابي إذا كان متصلاً
-  if(isCloudActive && db){
+  // حذف سحابي
+  if(isCloudActive){
     try {
-      await db.collection("quotes").doc(name).delete();
+      var getR = await fetch(JSONBIN_URL + '/latest', { headers: {'X-Master-Key': JSONBIN_KEY} });
+      if(getR.ok){
+        var gd = await getR.json();
+        var cloudQuotes = (gd.record && gd.record.quotes) ? gd.record.quotes : {};
+        var cloudItems  = (gd.record && gd.record.items)  ? gd.record.items  : {};
+        delete cloudQuotes[name];
+        await fetch(JSONBIN_URL, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
+          body: JSON.stringify({ items: cloudItems, quotes: cloudQuotes })
+        });
+      }
     } catch(e){}
   }
 
