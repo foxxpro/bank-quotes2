@@ -526,7 +526,7 @@ document.getElementById('infoSaveEditBtn').addEventListener('click', async funct
   var newDesc  = document.getElementById('edit_desc').value.trim();
   var newNotes = document.getElementById('edit_notes').value.trim();
 
-  // تحديث الكائن في CATS و ITEM_INDEX
+  // 1. تحديث الكائن في CATS و ITEM_INDEX في الذاكرة
   it.refPrice = newPrice;
   it.desc     = newDesc;
   it.notes    = newNotes;
@@ -541,27 +541,64 @@ document.getElementById('infoSaveEditBtn').addEventListener('click', async funct
     });
   });
 
-  // 1. حفظ التعديلات في التخزين المحلي (localStorage)
+  // 2. حفظ في localStorage كاحتياط
   try {
     customDetails[currentEditCode] = { refPrice: newPrice, desc: newDesc, notes: newNotes };
     localStorage.setItem(DETAILS_KEY, JSON.stringify(customDetails));
   } catch(e){}
 
-  // 2. حفظ التعديلات سحابياً إذا كان متصلاً بالإنترنت
-  if(typeof isCloudActive !== 'undefined' && isCloudActive && db){
-    try {
-      await db.collection("item_details").doc(currentEditCode).set({
-        refPrice: newPrice,
-        desc: newDesc,
-        notes: newNotes
-      });
-    } catch(e){}
+  buildItemIndex();
+  switchInfoMode('view');
+  showInfo(currentEditCode);
+
+  // 3. الحفظ الحقيقي الدائم: دمج البيانات في الملف وتنزيله تلقائياً
+  await bakeAndSaveFile();
+});
+
+// حفظ تعديلات CATS داخل ملف HTML وتنزيله تلقائياً
+async function bakeAndSaveFile(){
+  var htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+  // نستخرج محتوى CATS الحالي مع كل التعديلات ونضعه في الملف
+  var catsJSON = JSON.stringify(CATS, null, 2);
+  var newHtml = htmlContent.replace(
+    /const CATS = \[[\s\S]*?\];\n\nconst PRICE_KEY/,
+    'const CATS = ' + catsJSON + ';\n\nconst PRICE_KEY'
+  );
+
+  if(!newHtml || newHtml === htmlContent){
+    alert('✅ تم حفظ التعديل في الذاكرة.\n\n⚠️ لحفظ دائم: استخدم زر "📥 تحديث الملف" من الشريط السفلي.');
+    return;
   }
 
-  buildItemIndex();
-  showInfo(currentEditCode);
-  alert('✅ تم حفظ تعديلات العنصر بنجاح!');
-});
+  // محاولة حفظ مباشر في نفس الملف (Chrome/Edge فقط)
+  if(window.showSaveFilePicker){
+    try {
+      var handle = await window.showSaveFilePicker({
+        suggestedName: 'اداة-باقات-البنوك.html',
+        types: [{ description: 'HTML File', accept: {'text/html': ['.html']} }]
+      });
+      var writable = await handle.createWritable();
+      await writable.write(newHtml);
+      await writable.close();
+      alert('💾 تم حفظ التعديل بشكل دائم في ملف HTML بنجاح!\nالآن رفع الملف على GitHub لتظهر التعديلات للجميع.');
+      return;
+    } catch(err){
+      if(err.name === 'AbortError') return; // المستخدم ألغى
+    }
+  }
+
+  // تنزيل الملف المحدث تلقائياً
+  var blob = new Blob([newHtml], { type: 'text/html;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'اداة-باقات-البنوك.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+  alert('📥 تم تنزيل الملف المحدث بنجاح!\n\nاستبدل الملف القديم بهذا الملف الجديد.\nثم ارفعه على GitHub ليرى الجميع التعديلات.');
+}
 
 // إغلاق مودال المعلومات
 (function(){
