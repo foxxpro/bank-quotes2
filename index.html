@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title> عروض أسعار الباقات — المرشدي للتسويق</title>
+<title>منشئ عروض أسعار الباقات — المرشدي للتسويق</title>
 <style>
   :root{
     --navy:#0F2748; --navy2:#1B3A64; --gold:#C6A15B; --goldlt:#E6D7AE;
@@ -689,14 +689,17 @@ var isCloudActive = false;
 async function initCloud(){
   updateCloudBadge(null, 'جاري الاتصال بالسحابة...');
   try {
+    var controller = new AbortController();
+    var timer = setTimeout(function(){ controller.abort(); }, 8000);
     var resp = await fetch(JSONBIN_URL + '/latest', {
-      headers: { 'X-Master-Key': JSONBIN_KEY }
+      headers: { 'X-Master-Key': JSONBIN_KEY },
+      signal: controller.signal
     });
+    clearTimeout(timer);
     if(resp.ok){
       var data = await resp.json();
       var record = data.record || {};
       var items  = record.items || {};
-      // تطبيق التفاصيل السحابية على CATS
       Object.keys(items).forEach(function(code){
         customDetails[code] = items[code];
       });
@@ -708,7 +711,11 @@ async function initCloud(){
       updateCloudBadge(false, 'خطأ في الاتصال — وضع محلي');
     }
   } catch(e){
-    updateCloudBadge(false, 'لا يوجد إنترنت — وضع محلي');
+    if(e.name === 'AbortError'){
+      updateCloudBadge(false, 'انتهت مهلة الاتصال — وضع محلي');
+    } else {
+      updateCloudBadge(false, 'لا يوجد إنترنت — وضع محلي');
+    }
   }
 }
 
@@ -734,8 +741,7 @@ async function saveItemDetailsToCloud(){
       body: JSON.stringify({ items: merged })
     });
     if(putResp.ok){
-      alert('☁️ ✅ تم حفظ تعديلات العنصر بنجاح!
-سيظهر التعديل لكل مستخدم فوراً عند فتح الصفحة.');
+      alert('☁️ ✅ تم حفظ تعديلات العنصر بنجاح!\nسيظهر التعديل لكل مستخدم فوراً عند فتح الصفحة.');
     } else {
       alert('⚠️ تم الحفظ محلياً فقط. تحقق من الاتصال بالإنترنت.');
     }
