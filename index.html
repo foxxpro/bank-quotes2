@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>منشئ عروض أسعار الباقات — المرشدي للتسويق</title>
+<title> عروض أسعار الباقات — المرشدي للتسويق</title>
 <style>
   :root{
     --navy:#0F2748; --navy2:#1B3A64; --gold:#C6A15B; --goldlt:#E6D7AE;
@@ -133,9 +133,6 @@
   .info-refprice .lbl{font-size:12px;color:var(--mute);font-weight:600}
   .info-refprice .val{font-size:18px;font-weight:800;color:var(--ok)}
 </style>
-<!-- Firebase Cloud SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <header class="app no-print">
@@ -551,8 +548,8 @@ document.getElementById('infoSaveEditBtn').addEventListener('click', async funct
   switchInfoMode('view');
   showInfo(currentEditCode);
 
-  // 3. الحفظ الحقيقي الدائم: دمج البيانات في الملف وتنزيله تلقائياً
-  await bakeAndSaveFile();
+  // 3. حفظ سحابي على JSONBin فوراً
+  await saveItemDetailsToCloud();
 });
 
 // حفظ تعديلات CATS داخل ملف HTML وتنزيله تلقائياً
@@ -680,49 +677,71 @@ function collect(){
     disc:document.getElementById('disc').value,vat:document.getElementById('vat').value,cur:cur(),
     items:Object.fromEntries(Object.entries(state).map(([k,s])=>[k,{on:s.on,qty:s.qty,price:s.price}]))};
 }
-// ===== نظام الحفظ السحابي والمتعدد (Firebase Cloud + Local) =====
+// ===== نظام الحفظ السحابي (JSONBin.io) =====
 var QUOTES_STORE = 'ameQuotes_v2';
 
-// إعدادات Firebase Cloud
-var firebaseConfig = {
-  apiKey: "AIzaSyD-BankQuotesAppKey2026",
-  authDomain: "almorchedy-quotes.firebaseapp.com",
-  projectId: "almorchedy-quotes",
-  storageBucket: "almorchedy-quotes.appspot.com",
-  messagingSenderId: "109876543210",
-  appId: "1:109876543210:web:a1b2c3d4e5f6a7b8c9d0"
-};
-
-var db = null;
+// إعدادات JSONBin
+var JSONBIN_KEY = '$2a$10$kLCcUpfDKxRzmUDlfCdSz.nlCb07xxi6d2iqwIvt32zEdK/S338bG';
+var JSONBIN_BIN = '6a779891f5f4af5e29fc86db';
+var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_BIN;
 var isCloudActive = false;
 
-function initCloud(){
+async function initCloud(){
+  updateCloudBadge(null, 'جاري الاتصال بالسحابة...');
   try {
-    if(typeof firebase !== 'undefined'){
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore();
+    var resp = await fetch(JSONBIN_URL + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_KEY }
+    });
+    if(resp.ok){
+      var data = await resp.json();
+      var record = data.record || {};
+      var items  = record.items || {};
+      // تطبيق التفاصيل السحابية على CATS
+      Object.keys(items).forEach(function(code){
+        customDetails[code] = items[code];
+      });
+      try { localStorage.setItem(DETAILS_KEY, JSON.stringify(customDetails)); } catch(e){}
+      buildItemIndex();
       isCloudActive = true;
-      updateCloudBadge(true, "متصل بالسحابة أونلاين ☁️");
-      syncItemDetailsFromCloud();
+      updateCloudBadge(true, 'متصل بالسحابة ☁️');
     } else {
-      updateCloudBadge(false, "وضع محلي (Offline)");
+      updateCloudBadge(false, 'خطأ في الاتصال — وضع محلي');
     }
-  } catch(e) {
-    updateCloudBadge(false, "وضع محلي (Offline)");
+  } catch(e){
+    updateCloudBadge(false, 'لا يوجد إنترنت — وضع محلي');
   }
 }
 
-async function syncItemDetailsFromCloud(){
-  if(!isCloudActive || !db) return;
+async function saveItemDetailsToCloud(){
   try {
-    var snap = await db.collection("item_details").get();
-    snap.forEach(function(doc){
-      var data = doc.data();
-      customDetails[doc.id] = data;
+    // جلب البيانات الحالية من JSONBin
+    var getResp = await fetch(JSONBIN_URL + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_KEY }
     });
-    try { localStorage.setItem(DETAILS_KEY, JSON.stringify(customDetails)); } catch(e){}
-    buildItemIndex();
-  } catch(e){ console.log("Cloud details load:", e); }
+    var existing = {};
+    if(getResp.ok){
+      var d = await getResp.json();
+      existing = (d.record && d.record.items) ? d.record.items : {};
+    }
+    // دمج التعديلات الحالية فوق القديمة
+    var merged = Object.assign({}, existing, customDetails);
+    var putResp = await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_KEY
+      },
+      body: JSON.stringify({ items: merged })
+    });
+    if(putResp.ok){
+      alert('☁️ ✅ تم حفظ تعديلات العنصر بنجاح!
+سيظهر التعديل لكل مستخدم فوراً عند فتح الصفحة.');
+    } else {
+      alert('⚠️ تم الحفظ محلياً فقط. تحقق من الاتصال بالإنترنت.');
+    }
+  } catch(e){
+    alert('⚠️ لا يوجد اتصال بالإنترنت. تم الحفظ محلياً فقط.');
+  }
 }
 
 function updateCloudBadge(online, text){
